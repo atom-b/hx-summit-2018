@@ -1,0 +1,15 @@
+::if (SET_PLATFORM == "ios")::
+## iOS
+app_identifier("::APP_PACKAGE::") # The bundle identifier of your app
+apple_id("my.user@flowplay.com") # Your Apple email address
+
+itc_team_id("1160992") # iTunes Connect Team ID
+team_id("::DEVELOPMENT_TEAM_ID::") # Developer Portal Team ID
+::elseif (SET_PLATFORM == "android")::
+## Android
+# json_key_file("/path/to/gplay.json") # Path to the json secret file - Follow https://docs.fastlane.tools/actions/supply/#setup to get one
+json_key_file("~/fp/svn/trunk/build.gplay.json")
+package_name("::APP_PACKAGE::")
+::end::
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile

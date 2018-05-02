@@ -1,0 +1,131 @@
+import lime.project.*;
+import lime.tools.helpers.PathHelper;
+import lime.tools.helpers.LogHelper;
+
+import sys.io.File;
+import sys.FileSystem;
+
+import build.AssetFinder;
+
+using Lambda;
+
+@:compiler("-cp")
+@:compiler("Build/src")
+
+class Project extends HXProject {
+
+    public function new () {
+        super ();
+
+		// 'display' outputs hxml that is consumed by various tools (such as VS Code) which custom log output could break
+		if (command == "display") {
+			LogHelper.mute = true;
+		}
+
+		// Uncomment to import settings from project.xml
+		// var xmlConf = new ProjectXMLParser("project.xml");
+		// this.merge(xmlConf);
+
+        app = { main: "piratepig.PiratePig", file: "PiratePig", path: "Export"};
+        meta = { title: "Pirate Pig", packageName: "com.flowplay.PiratePig", version: "1.0.0", company: "FlowPlay" };
+
+        windows[0] = {
+			fps: 60,
+			background: 0,
+			hardware: true,
+			vsync: true,
+		};
+
+		sources.push ("Source");
+
+        haxelibs.push (new Haxelib ("openfl"));
+        haxelibs.push (new Haxelib ("actuate"));
+
+        includeAssets ("Assets/fonts", "fonts", [ "*.ttf" ]);
+        includeAssets ("Assets/images", "images", [ "*" ], ["icon.svg"]);
+
+		icons.push(new Icon ("Assets/images/icon.svg"));
+
+		if (platformType == PlatformType.DESKTOP) {
+			windows[0].width = 800;
+			windows[0].height = 600;
+		}
+
+		checkCompilerVersion();
+		includeSounds();
+		includeMobileIcons();
+		configureTarget();
+    }
+
+	private function includeSounds() {
+		var sounds = AssetFinder.getSounds("Assets/sounds", target, platformType);
+
+		for (id in sounds.keys()) {
+			LogHelper.info("", "adding sound asset " + sounds.get(id));
+			var sound = new Asset(sounds.get(id));
+			sound.id = id;
+			assets.push(sound);
+		}
+	}
+
+	private function configureTarget() {
+		switch target {
+			case Platform.IOS:
+				config.set("ios.team-id", "AAABBB1234");
+
+				config.set("ios.adhoc.manifest.appURL", "https://some.website.com/dist/adhoc/PiratePig.ipa");
+				config.set("ios.adhoc.manifest.displayImageURL", "https://some.website.com/dist/adhoc/DISPLAY.png");
+				config.set("ios.adhoc.manifest.fullSizeImageURL", "https://some.website.com/dist/adhoc/FULLSIZE.png");
+
+				// Automatic provisioning requires a developer account saved in XCode
+				// Tell XCode to update and create provisioning profiles
+				config.set("ios.allow-provisioning-updates", "true");
+				// Add any connected iOS devices to our Allowed Devices list
+				config.set("ios.allow-provisioning-device-registration", "true");
+
+				defines.set("HXCPP_DEBUG_LINK", "1");
+
+			case Platform.ANDROID:
+				// Keep passwords out of your repo!
+				if (environment.exists("ANDROID_KEYSTORE_PASS") && !debug) {
+					keystore = new Keystore ("path/to//android.jks", environment.get("ANDROID_KEYSTORE_PASS"));
+				}
+				else if (!debug && (command == 'build' || command == 'update')) {
+					LogHelper.warn("Environment variable ANDROID_KEYSTORE_PASS not defined. Release build will be signed with a debug certificate.");
+				}
+
+				// NDK symbol stripping was added in Android Gradle Plugin 2.2.3
+				config.set("android.gradle-version", "2.14.1");
+				config.set("android.gradle-plugin", "2.2.3");
+
+				// generate symbols for release builds
+				defines.set("HXCPP_DEBUG_LINK", "1");
+
+			case Platform.HTML5:
+				includeAssets ("Assets/sounds", "sounds");
+				windows[0].width = 0;
+				windows[0].height = 0;
+
+			default: LogHelper.info("", "No platform-specific project settings required");
+		}
+	}
+
+	private function includeMobileIcons() {
+		var iconDir = "Assets/icons";
+		if (!FileSystem.exists(iconDir)) {
+			return;
+		}
+		AssetFinder.getMobileIcons(iconDir)
+			.iter(function (i:Icon) {
+				icons.push(i);
+			});
+	}
+
+	private function checkCompilerVersion() {
+		LogHelper.info("Using haxe compiler version " + environment["haxe_ver"]);
+
+		if (environment["haxe_ver"].indexOf("3.4.2") == -1 && environment["haxe_ver"].indexOf("3.4.7") == -1) {
+			LogHelper.error("Incorrect haxe compiler version");
+		}
+	}
+}

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+
+	<meta title="Pirate Pig" package="com.flowplay.PiratePig" version="1.0.0" company="FlowPlay" />
+	<app path="Export" file="PiratePig" main="piratepig.PiratePig" />
+	
+	<window width="800" height="600" if="desktop" />
+	<window width="0" height="0" if="html5" />
+	
+	<source path="Source" />
+	
+	<haxelib name="openfl" />
+	<haxelib name="actuate" />
+		
+	<assets path="Assets/fonts" rename="fonts" include="*.ttf" />
+	<assets path="Assets/images" rename="images" include="*" exclude="icon.svg" />
+	
+	<icon path="Assets/images/icon.svg" />
+	
+	<assets path="Assets/sounds" rename="sounds" if="web">
+		<sound path="3.mp3" id="sound3" />
+		<sound path="4.mp3" id="sound4" />
+		<sound path="5.mp3" id="sound5" />
+		<music path="theme.mp3" id="soundTheme" />
+	</assets>
+	<assets path="Assets/sounds" rename="sounds" if="html5" />
+
+	<assets path="Assets/sounds" rename="sounds" unless="web">
+		<sound path="3.wav" id="sound3" />
+		<sound path="4.wav" id="sound4" />
+		<sound path="5.wav" id="sound5" />
+		<music path="theme.ogg" id="soundTheme" />
+	</assets>
+
+	<section if="android">
+		<!-- Generate debug symbols for all build types. Will be stripped when the APK is packed -->
+		<define name="HXCPP_DEBUG_LINK"/>
+
+		<!-- NDK symbol stripping was added in Android Gradle Plugin 2.2.3 -->
+		<config:android gradle-plugin="2.2.3" />
+		<config:android gradle-version="2.14.1" />
+
+		<template path="Templates/fastlane/Fastfile" rename="fastlane/Fastfile"/>
+		<template path="Templates/fastlane/Appfile" rename="fastlane/Appfile"/>
+		<template path="Templates/fastlane/Gemfile" rename="Gemfile"/>
+
+		<section if="release-sign">
+			<certificate path="path/to/android.keystore" if="android" />
+			<certificate path="path/to/author.p12" if="blackberry" />
+		</section>
+	</section>
+
+	<section if="ios">
+		<!-- Generate debug symbols for all build types. Will be stripped when the IPA is packed -->
+		<define name="HXCPP_DEBUG_LINK"/>
+
+		<!-- Required for automatic signing -->
+		<config:ios team-id="AAABBB1234"/>
+
+		<!-- Automatic provisioning requires a developer account saved in XCode -->
+		<!-- Tell XCode to update and create provisioning profiles -->
+		<config:ios allow-provisioning-updates="true"/>
+
+		<!-- Add any connected iOS devices to our Allowed Devices list -->
+		<config:ios allow-provisioning-device-registration="true" if="registerdevice"/>
+		
+		<config:ios>
+			<adhoc>
+				<manifest>
+					<appURL>https://some.website.com/dist/adhoc/PiratePig.ipa</appURL>
+					<displayImageURL>https://some.website.com/dist/adhoc/DISPLAY.png</displayImageURL>
+					<fullSizeImageURL>https://some.website.com/dist/adhoc/FULLSIZE.png</fullSizeImageURL>
+				</manifest>
+			</adhoc>
+		</config:ios>
+
+		<!-- https://github.com/ealeksandrov/ProvisionQL -->
+
+		<!-- fastlane config files -->
+		<template path="Templates/fastlane/Fastfile" rename="../fastlane/Fastfile" if="ios"/>
+		<template path="Templates/fastlane/Appfile" rename="../fastlane/Appfile" if="ios"/>
+		<template path="Templates/fastlane/Gemfile" rename="../Gemfile" if="ios"/>
+	</section>
+</project>

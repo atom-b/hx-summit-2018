@@ -1,0 +1,80 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+::if (SET_PLATFORM == "ios")::
+default_platform(:ios)
+
+platform :ios do
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    upload_to_testflight
+  end
+end
+
+  desc "Submit a build to the App Store"
+  lane :publish do
+    deliver(
+      force: true,
+      submit_for_review: true,
+      skip_metadata: false,
+      skip_screenshots: true,
+      skip_binary_upload: false,
+      ipa: "dist/appstore/::APP_FILE::.ipa",
+      submission_information: {
+        add_id_info_uses_idfa: true,
+        add_id_info_serves_ads: true,
+        add_id_info_tracks_install: true,
+        add_id_info_tracks_action: true,
+        }
+    )
+  end
+
+  desc "Submit a build to Apple TestFlight"
+  lane :beta do
+    testflight(
+      ipa: "dist/appstore/::APP_FILE::.ipa",
+      changelog: "::APP_VERSION::"
+    )
+  end
+end
+::elseif (SET_PLATFORM == "android")::
+default_platform(:android)
+
+platform :android do
+  desc "Submit a build to the Google Play store"
+  lane :publish do
+    supply(
+      apk_paths: ["build/outputs/apk/::APP_FILE::-release.apk"],
+      skip_upload_metadata: false,
+      # Uploading images and screenshots will replace the ones in the play store listing, not add to them
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      check_superseded_tracks: true # remove builds with lower version numbers from alpha and beta tracks
+    )
+  end
+
+  desc "Submit a build to the Google Play beta track"
+  lane :beta do
+    supply(
+      track: "beta",
+      apk_paths: ["build/outputs/apk/::APP_FILE::-release.apk"],
+      skip_upload_metadata: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      check_superseded_tracks: true # remove builds with lower version numbers from alpha track
+    )
+  end
+end
+::end::
